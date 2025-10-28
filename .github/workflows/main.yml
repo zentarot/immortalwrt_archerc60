@@ -29,9 +29,9 @@ jobs:
         
         # ایجاد فایل config
         cat > .config << 'EOF'
-CONFIG_TARGET_ramips=y
-CONFIG_TARGET_ramips_mt7620=y
-CONFIG_TARGET_ramips_mt7620_DEVICE_tplink_archer-c60-v3=y
+CONFIG_TARGET_ath79=y
+CONFIG_TARGET_ath79_generic=y
+CONFIG_TARGET_ath79_generic_DEVICE_tplink_archer-c60-v3=y
 
 # پکیج‌های پایه
 CONFIG_PACKAGE_base-files=y
