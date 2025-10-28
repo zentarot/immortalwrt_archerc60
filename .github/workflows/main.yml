@@ -1,0 +1,99 @@
+name: Build Custom ImmortalWrt
+
+on:
+  workflow_dispatch:
+    inputs:
+      device:
+        description: 'Device name'
+        required: true
+        default: 'tplink_archer-c60-v3'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libncurses5-dev libncursesw5-dev zlib1g-dev gawk git gettext libssl-dev xsltproc wget unzip python3 python3-distutils
+        
+    - name: Configure Build
+      run: |
+        cd $GITHUB_WORKSPACE
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+        
+        # ایجاد فایل config
+        cat > .config << 'EOF'
+CONFIG_TARGET_ramips=y
+CONFIG_TARGET_ramips_mt7620=y
+CONFIG_TARGET_ramips_mt7620_DEVICE_tplink_archer-c60-v3=y
+
+# پکیج‌های پایه
+CONFIG_PACKAGE_base-files=y
+CONFIG_PACKAGE_block-mount=y
+CONFIG_PACKAGE_ca-bundle=y
+CONFIG_PACKAGE_dnsmasq-full=y
+CONFIG_PACKAGE_dropbear=y
+CONFIG_PACKAGE_firewall4=y
+CONFIG_PACKAGE_fstools=y
+CONFIG_PACKAGE_libc=y
+CONFIG_PACKAGE_libgcc=y
+CONFIG_PACKAGE_libustream-openssl=y
+CONFIG_PACKAGE_logd=y
+CONFIG_PACKAGE_luci=y
+CONFIG_PACKAGE_mtd=y
+CONFIG_PACKAGE_netifd=y
+CONFIG_PACKAGE_nftables=y
+CONFIG_PACKAGE_odhcp6c=y
+CONFIG_PACKAGE_odhcpd-ipv6only=y
+CONFIG_PACKAGE_opkg=y
+CONFIG_PACKAGE_ppp=y
+CONFIG_PACKAGE_ppp-mod-pppoe=y
+CONFIG_PACKAGE_procd-ujail=y
+CONFIG_PACKAGE_swconfig=y
+CONFIG_PACKAGE_uboot-envtools=y
+CONFIG_PACKAGE_uci=y
+CONFIG_PACKAGE_uclient-fetch=y
+CONFIG_PACKAGE_urandom-seed=y
+CONFIG_PACKAGE_urngd=y
+CONFIG_PACKAGE_wpad-openssl=y
+
+# پکیج‌های VPN - انتخاب شده برای کنترل سایز
+CONFIG_PACKAGE_openvpn-openssl=y
+CONFIG_PACKAGE_luci-app-openvpn=y
+CONFIG_PACKAGE_wireguard-tools=y
+CONFIG_PACKAGE_kmod-wireguard=y
+CONFIG_PACKAGE_luci-proto-wireguard=y
+CONFIG_PACKAGE_openconnect=y
+CONFIG_PACKAGE_simple-obfs=y
+CONFIG_PACKAGE_v2ray-core=y
+CONFIG_PACKAGE_luci-app-v2ray=y
+
+# کرنل مدول
+CONFIG_PACKAGE_kmod-ath9k=y
+CONFIG_PACKAGE_kmod-gpio-button-hotplug=y
+CONFIG_PACKAGE_kmod-nft-offload=y
+CONFIG_PACKAGE_kmod-tun=y
+
+# فیرمور وای‌فای
+CONFIG_PACKAGE_ath10k-firmware-qca9888-ct=y
+EOF
+
+        make defconfig
+        
+    - name: Build Firmware
+      run: |
+        cd $GITHUB_WORKSPACE
+        make -j$(nproc)
+        
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: custom-firmware
+        path: bin/targets/ramips/mt7620/
+        retention-days: 30
